@@ -1,9 +1,9 @@
 // copyright 2023 © Xron Trix | https://github.com/Xrontrix10
 
-import { isAuthorized } from "../auth/authenticate";
 import { Env } from "..";
-import { returnJson, badEntity, badRequest, serverRoot, notFound, notAllowed, noContent, serverError } from "./responses";
-import { getDataByTable, getRowByID, updateRowById, insertRowInTable, deleteRowById, dropEntireTable, getRowByCol } from "../database/d1sqlite";
+import { isAuthorized } from "../auth/authenticate";
+import { badRequest, serverRoot, noContent } from "./responses";
+import { handleRoutes, handleIDRoutes, handleQueryRoutes } from "./routes";
 
 export async function respondRequest(req: Request, env: Env, path: string, search: string, searchParams: any, is_post: boolean, is_get: boolean, is_put: boolean, is_delete: boolean): Promise<Response> {
 
@@ -26,46 +26,8 @@ export async function respondRequest(req: Request, env: Env, path: string, searc
 
         const table = (path === '/faculties') ? "Faculties" : "Members";
 
-        if (is_post) {
-
-            let reqData;
-            try {
-
-                reqData = await req.json() as { name: string; role: string; image: string; mobile: number; roll: string; };
-                const { name, role, image, mobile } = reqData;
-
-                if (!name || !role || !image || !mobile) { // If any field is missing
-                    return badEntity();
-                }
-
-                if (table === 'Members' && !reqData.roll) { // If roll field is missing for Members
-                    return badEntity();
-                }
-            } catch (e) {
-                console.log(e);
-                return badEntity();
-            }
-            // Insert new data in the D1 store
-            const response = await insertRowInTable(env, reqData, table);
-            return response;
-        }
-
-        else if (is_get) {
-            const details = await getDataByTable(env, table);
-            if (details) {
-                return returnJson(details);
-            }
-            return notFound();
-        }
-
-        else if (is_delete) {
-            const response = await dropEntireTable(env, table);
-            return response;
-        }
-
-        else {
-            return notAllowed();
-        }
+        const response = await handleRoutes(req, env, table, is_post, is_get, is_delete);
+        return response;
     }
 
     else if ((path.startsWith('/faculties/') || path.startsWith('/members/')) && !search) {
@@ -73,39 +35,8 @@ export async function respondRequest(req: Request, env: Env, path: string, searc
         const table = (path.startsWith('/faculties/')) ? "Faculties" : "Members";
         const dataID = decodeURIComponent(path.split('/')[2]);  // Get the id from the URL path
 
-        if (is_get) {
-            const response = await getRowByID(env, dataID, table);
-            return response;
-        }
-
-        else if (is_put) {
-
-            let newData;
-            try {
-
-                newData = await req.json() as { name: string; role: string; image: string; mobile: number; roll: string; };
-                const { name, role, image, mobile } = newData;
-
-                if (!name && !role && !image && !mobile) { // If No field is provided
-                    return badEntity();
-                }
-            } catch (e) {
-                console.log(e);
-                return badEntity();
-            }
-            // Update data in the D1 store
-            const response = await updateRowById(env, dataID, newData, table)
-            return response;
-        }
-
-        else if (is_delete) {
-            const response = await deleteRowById(env, dataID, table);
-            return response;
-        }
-
-        else {
-            return notAllowed();
-        }
+        const response = await handleIDRoutes(req, env, table, dataID, is_get, is_put, is_delete);
+        return response;
     }
 
     else if ((path.startsWith('/faculties') || path.startsWith('/members')) && search) {
@@ -117,103 +48,23 @@ export async function respondRequest(req: Request, env: Env, path: string, searc
             columns.push("roll");
         }
 
-        console.log(columns);
-
-        for (const key of searchParams.keys()) {
-
-            const value = searchParams.get(key); // Get the Query Value
-
-            if (columns.includes(key)) { // Search for known column in Query Key
-
-                const [exists, results] = await getRowByCol(env, key, value, table);
-                if (exists && results) {
-                    return returnJson(results);
-                }
-                else if (!exists) {
-                    return notFound();
-                }
-                else {
-                    return serverError();
-                }
-            }
-        }
-
-        return badRequest();
+        const response = await handleQueryRoutes(columns, env, table, searchParams);
+        return response;
     }
 
     else if (path === '/events' && !search) {
         const table = 'Events';
 
-        if (is_post) {
-
-            let reqData;
-            try {
-                reqData = await req.json() as { title: string; page: string; image: string };
-                const { title, page, image } = reqData;
-
-                if (!title || !page || !image) { // If any field is missing
-                    return badEntity();
-                }
-            } catch (e) {
-                console.log(e);
-                return badEntity();
-            }
-            // Insert new data in the D1 store
-            const response = await insertRowInTable(env, reqData, table);
-            return response;
-        }
-
-        else if (is_get) {
-            const details = await getDataByTable(env, table);
-            if (details) { return returnJson(details); }
-            return notFound();
-        }
-
-        else if (is_delete) {
-            const response = await dropEntireTable(env, table);
-            return response;
-        }
-
-        else {
-            return notAllowed();
-        }
+        const response = await handleRoutes(req, env, table, is_post, is_get, is_delete);
+        return response;
     }
 
     else if (path.startsWith('/events/') && !search) {
         const table = 'Events';
         const dataID = decodeURIComponent(path.split('/')[2]);  // Get the Event id from the URL path
 
-        if (is_get) {
-            const response = await getRowByID(env, dataID, table);
-            return response;
-        }
-
-        else if (is_put) {
-            let newData;
-            try {
-                newData = await req.json() as { title: string; page: string; image: string; teams: any };
-                const { title, page, image, teams } = newData;
-
-                if (!title && !page && !image && !teams) { // If No field is provided
-                    return badEntity();
-                }
-            } catch (e) {
-                console.log(e);
-                return badEntity();
-            }
-            // Update data in the D1 store
-            const response = await updateRowById(env, dataID, newData, table)
-            return response;
-        }
-
-        else if (is_delete) {
-            const response = await deleteRowById(env, dataID, table);
-            return response;
-        }
-
-        else {
-            return notAllowed();
-        }
+        const response = await handleIDRoutes(req, env, table, dataID, is_get, is_put, is_delete);
+        return response;
     }
 
 
@@ -223,26 +74,35 @@ export async function respondRequest(req: Request, env: Env, path: string, searc
 
         const columns = ["id", "title", "image", "page"];
 
-        for (const key of searchParams.keys()) {
+        const response = await handleQueryRoutes(columns, env, table, searchParams);
+        return response;
+    }
 
-            const value = searchParams.get(key); // Get the Query Value
+    else if (path === '/teams' && !search) {
 
-            if (columns.includes(key)) { // Search for known column in Query Key
+        const table = 'Teams';
 
-                const [exists, results] = await getRowByCol(env, key, value, table);
-                if (exists && results) {
-                    return returnJson(results);
-                }
-                else if (!exists) {
-                    return notFound();
-                }
-                else {
-                    return serverError();
-                }
-            }
-        }
+        const response = await handleRoutes(req, env, table, is_post, is_get, is_delete);
+        return response;
+    }
 
-        return badRequest();
+    else if (path.startsWith('/teams/') && !search) {
+
+        const table = 'Teams';
+        const dataID = decodeURIComponent(path.split('/')[2]);  // Get the Event id from the URL path
+
+        const response = await handleIDRoutes(req, env, table, dataID, is_get, is_put, is_delete);
+        return response;
+    }
+
+    else if ((path.startsWith('/teams')) && search) {
+
+        const table = "Teams";
+
+        const columns = ["id", "teamName", "eventName", "teamLeader", "newsSource"];
+
+        const response = await handleQueryRoutes(columns, env, table, searchParams);
+        return response;
     }
 
     else {

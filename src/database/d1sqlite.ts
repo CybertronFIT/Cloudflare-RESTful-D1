@@ -135,6 +135,15 @@ export async function insertRowInTable(env: Env, newData: any, table: string) {
       return dataConflict();
     }
   }
+  else if (existingData && table === 'Teams') {
+    dataIndex = dataArray.findIndex( // Check for Duplicate existing event with same page
+      (data_t: { teamLeader: any; }) => data_t.teamLeader === newData.teamLeader,
+    );
+
+    if (dataIndex !== -1) {
+      return dataConflict();
+    }
+  }
 
   // Check for ID Duplication and prepare SQl Commands
   if (table === 'Members') {
@@ -168,6 +177,21 @@ export async function insertRowInTable(env: Env, newData: any, table: string) {
 
     create_sql += "title TEXT, page TEXT, image TEXT)";
     insert_sql += "title, page, image) VALUES (?1, ?2, ?3)";
+  }
+
+  else if (table === 'Teams') {
+
+    dataId = "TEM#" + dataId;
+    do {
+      dataId = "TEM#" + generateCustomID();
+    } while (dataArray.some((every_data: { id: string; }) => every_data.id === dataId))
+
+    create_sql += "teamName TEXT, eventName TEXT, paymentID TEXT, newsSource TEXT, teamLeader TEXT, p1 TEXT, p2 TEXT, p3 TEXT)";
+    insert_sql += "teamName, eventName, paymentID, newsSource, teamLeader, p1, p2, p3) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)";
+
+    while (sql_values.length < 8) {
+      sql_values.push("");
+    }
   }
 
   try {
