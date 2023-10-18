@@ -37,7 +37,9 @@ export async function getRowByCol(env: Env, colName: string, colVal: string, tab
     if (results.length === 0) {
       return [false, false];
     }
-    return [true, convertToJSON([results[0].id, table, results, meta.duration, success])];
+
+    const idArray = results.map(item => item.id); // Create an array of IDs of results
+    return [true, convertToJSON([idArray, table, results, meta.duration, success])];
   }
 
   catch (error) {
@@ -115,7 +117,7 @@ export async function insertRowInTable(env: Env, newData: any, table: string) {
   }
 
   // Data duplication check
-  if (existingData && (table === 'Faculties' || table === 'Members')) {
+  if (existingData && (table === 'Faculties' || table === 'Members' || table === 'Participants')) {
 
     dataIndex = dataArray.findIndex( // Check for Duplicate existing data with same mobile
       (data_t: { mobile: any; }) => data_t.mobile === newData.mobile,
@@ -137,7 +139,7 @@ export async function insertRowInTable(env: Env, newData: any, table: string) {
   }
   else if (existingData && table === 'Teams') {
     dataIndex = dataArray.findIndex( // Check for Duplicate existing event with same page
-      (data_t: { teamLeader: any; }) => data_t.teamLeader === newData.teamLeader,
+      (data_t: { paymentID: any; }) => data_t.paymentID === newData.paymentID,
     );
 
     if (dataIndex !== -1) {
@@ -176,7 +178,7 @@ export async function insertRowInTable(env: Env, newData: any, table: string) {
     } while (dataArray.some((every_data: { id: string; }) => every_data.id === dataId))
 
     create_sql += "title TEXT, page TEXT, image TEXT)";
-    insert_sql += "title, page, image) VALUES (?1, ?2, ?3)";
+    insert_sql += "title, page, image) VALUES (?1, ?2, ?3, ?4)";
   }
 
   else if (table === 'Teams') {
@@ -186,12 +188,22 @@ export async function insertRowInTable(env: Env, newData: any, table: string) {
       dataId = "TEM#" + generateCustomID();
     } while (dataArray.some((every_data: { id: string; }) => every_data.id === dataId))
 
-    create_sql += "teamName TEXT, eventName TEXT, paymentID TEXT, newsSource TEXT, teamLeader TEXT, p1 TEXT, p2 TEXT, p3 TEXT)";
-    insert_sql += "teamName, eventName, paymentID, newsSource, teamLeader, p1, p2, p3) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)";
+    create_sql += "teamName TEXT, eventName TEXT, paymentID TEXT, screenShot TEXT, newsSource TEXT, teamLeader TEXT, member1 TEXT, member2 TEXT, member3 TEXT)";
+    insert_sql += "teamName, eventName, paymentID, screenShot, newsSource, teamLeader, member1, member2, member3) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)";
 
-    while (sql_values.length < 8) {
-      sql_values.push("");
+    while (sql_values.length < 9) {
+      sql_values.push("-");
     }
+  }
+
+  else if (table === 'Participants') {
+    dataId = "PRC#" + dataId;
+    do {
+      dataId = "PRC#" + generateCustomID();
+    } while (dataArray.some((every_data: { id: string; }) => every_data.id === dataId))
+
+    create_sql += "name TEXT, mobile TEXT, email TEXT, year TEXT, department TEXT, college TEXT)";
+    insert_sql += "name, mobile, email, year, department, college) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)";
   }
 
   try {

@@ -45,14 +45,28 @@ async function validateRequest(req: Request, table: string, is_post: boolean, is
 
         else if (table === 'Teams') {
 
-            reqData = await req.json() as { teamName: string; eventName: string; teamLeader: string; paymentID: string, newsSource: string };
-            const { teamName, eventName, teamLeader, paymentID, newsSource } = reqData;
+            reqData = await req.json() as { teamName: string; eventName: string; paymentID: string; screenShot: string; newsSource: string; teamLeader: string; };
+            const { teamName, eventName, paymentID, screenShot, newsSource, teamLeader } = reqData;
 
-            if (is_post && (!teamName || !eventName || !teamLeader || !paymentID || !newsSource)) { // Check If any required field is missing
+            if (is_post && (!teamName || !eventName || !teamLeader || !paymentID || !screenShot || !newsSource)) { // Check If any required field is missing
                 return [false, null];
             }
 
-            else if (is_put && (!teamName && !eventName && !teamLeader && !paymentID && !newsSource)) {
+            else if (is_put && (!teamName && !eventName && !teamLeader && !paymentID && !screenShot && !newsSource)) {
+                return [false, null];
+            }
+        }
+
+        else if (table === 'Participants') {
+
+            reqData = await req.json() as { name: string; mobile: string; email: string; year: string, department: string, college: string };
+            const { name, mobile, email, year, department, college } = reqData;
+
+            if (is_post && (!name || !mobile || !email || !year || !department || !college)) { // Check If any required field is missing
+                return [false, null];
+            }
+
+            else if (is_put && (!name && !mobile && !email && !year && !department && !college)) {
                 return [false, null];
             }
         }
@@ -69,8 +83,8 @@ async function validateRequest(req: Request, table: string, is_post: boolean, is
 export async function handleRoutes(req: Request, env: Env, table: string, is_post: boolean, is_get: boolean, is_delete: boolean): Promise<any> {
 
     if (is_post) {
-
         const [is_valid, reqData] = await validateRequest(req, table, is_post, false);
+
         if (!is_valid)
             return badEntity();
         // Insert new data in the D1 store

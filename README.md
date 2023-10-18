@@ -78,6 +78,8 @@
    - `/faculties` - Access Faculty Members Data
    - `/members` - Access Regular Members Data
    - `/events` - Access Event Data
+   - `/teams` - Access Team Data
+   - `/participants` - Access Participant Data
 
 </details>
 
@@ -119,6 +121,33 @@
          title: "String",
          page: "String",
          image: "String"
+      }</pre>
+
+   - Team
+
+      <pre>
+      {
+         teamName: "String",
+         eventName: "String",
+         paymentID: "String",
+         screenShot: "String",
+         newsSource: "String",
+         teamLeader: "String",
+         member1: "String", ( <== Optional )
+         member2: "String", ( <== Optional )
+         member3: "String", ( <== Optional )
+      }</pre>
+   
+   - Participant
+
+      <pre>
+      {
+         name: "String",
+         mobile: "String",
+         email: "String",
+         year: "String",
+         department: "String",
+         college: "String"
       }</pre>
 
 </details>

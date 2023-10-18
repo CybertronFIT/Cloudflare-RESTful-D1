@@ -71,7 +71,6 @@ export async function respondRequest(req: Request, env: Env, path: string, searc
     else if ((path.startsWith('/events')) && search) {
 
         const table = "Events";
-
         const columns = ["id", "title", "image", "page"];
 
         const response = await handleQueryRoutes(columns, env, table, searchParams);
@@ -100,6 +99,32 @@ export async function respondRequest(req: Request, env: Env, path: string, searc
         const table = "Teams";
 
         const columns = ["id", "teamName", "eventName", "teamLeader", "newsSource"];
+
+        const response = await handleQueryRoutes(columns, env, table, searchParams);
+        return response;
+    }
+
+    else if (path === '/participants' && !search) {
+
+        const table = 'Participants';
+
+        const response = await handleRoutes(req, env, table, is_post, is_get, is_delete);
+        return response;
+    }
+
+    else if (path.startsWith('/participants/') && !search) {
+
+        const table = 'Participants';
+        const dataID = decodeURIComponent(path.split('/')[2]);  // Get the Event id from the URL path
+
+        const response = await handleIDRoutes(req, env, table, dataID, is_get, is_put, is_delete);
+        return response;
+    }
+
+    else if ((path.startsWith('/participants')) && search) {
+
+        const table = "Participants";
+        const columns = ["id", "name", "mobile", "email", "year", "department", "college"];
 
         const response = await handleQueryRoutes(columns, env, table, searchParams);
         return response;
