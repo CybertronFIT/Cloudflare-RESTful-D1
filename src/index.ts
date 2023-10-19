@@ -1,6 +1,6 @@
 // copyright 2023 © Xron Trix | https://github.com/Xrontrix10
 
-import { notAllowed } from './handler/responses';
+import { noContent, notAllowed } from './handler/responses';
 import { respondRequest } from './handler/requests';
 
 export interface Env {
@@ -35,6 +35,10 @@ export default {
 
 			const respond = await respondRequest(request, env, pathname, search, searchParams, false, false, false, true);
 			return respond;
+		}
+
+		else if (method === 'OPTIONS') {
+			return noContent();
 		}
 
 		else {
